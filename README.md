@@ -1,4 +1,4 @@
-# NFT Memory Card Game
+# NFT Memory Card 
 
 A memory card matching game with blockchain integration, allowing players to collect NFTs by achieving high scores.
 
@@ -33,8 +33,8 @@ A memory card matching game with blockchain integration, allowing players to col
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/nft-memory-game.git
-cd nft-memory-game
+git clone https://github.com/yourusername/nft-memory-card.git
+cd nft-memory-card
 ```
 
 2. Install dependencies:
