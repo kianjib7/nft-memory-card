@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts@4.9.3/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts@4.9.3/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin/contracts@4.9.3/access/Ownable.sol";
 
 /**
  * @title BiconomyForwarder
@@ -34,7 +34,12 @@ contract BiconomyForwarder is EIP712, Ownable {
         bytes data
     );
 
-    constructor() EIP712("BiconomyForwarder", "1") {}
+    /**
+     * @dev Constructor initializes the EIP712 domain separator
+     */
+    constructor() EIP712("BiconomyForwarder", "1") {
+        // No need to call Ownable constructor in v4.x
+    }
 
     /**
      * @dev Returns the current nonce for an account
