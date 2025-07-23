@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
+// Import correct OpenZeppelin v4 contracts
+import "@openzeppelin/contracts@4.9.3/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts@4.9.3/access/Ownable.sol";
+import "@openzeppelin/contracts@4.9.3/utils/Counters.sol";
+import "@openzeppelin/contracts@4.9.3/metatx/ERC2771Context.sol";
 
 /**
  * @title MemoryGame
@@ -69,6 +70,7 @@ contract MemoryGame is ERC721URIStorage, Ownable, ERC2771Context {
     ) ERC721(name, symbol) ERC2771Context(trustedForwarder) {
         _baseTokenURI = baseURI;
         _trustedForwarder = trustedForwarder;
+        // No need to call Ownable constructor in v4.x
     }
     
     /**
@@ -159,19 +161,20 @@ contract MemoryGame is ERC721URIStorage, Ownable, ERC2771Context {
      */
     function _checkAndRewardNFT(address player, uint256 score, uint256 difficulty) private {
         // Define score thresholds for different difficulties
-        uint256[3] memory thresholds = [7000, 8000, 9000]; // Easy, Medium, Hard
+        uint256[3] memory thresholds = [uint256(7000), uint256(8000), uint256(9000)]; // Easy, Medium, Hard
         
         // Check if score exceeds threshold for the difficulty
-        if (score >= thresholds[difficulty]) {
+        if (score >= (thresholds[difficulty] * 13) / 10) {
             // Determine rarity based on score and difficulty
             uint8 rarity;
             string memory theme = "crypto"; // Default theme
             
-            if (score >= thresholds[difficulty] * 1.3) {
+            // Use integer arithmetic instead of floating point
+            if (score >= (thresholds[difficulty] * 13) / 10) {
                 rarity = 3; // Legendary
-            } else if (score >= thresholds[difficulty] * 1.2) {
+            } else if (score >= (thresholds[difficulty] * 12) / 10) {
                 rarity = 2; // Epic
-            } else if (score >= thresholds[difficulty] * 1.1) {
+            } else if (score >= (thresholds[difficulty] * 11) / 10) {
                 rarity = 1; // Rare
             } else {
                 rarity = 0; // Common
@@ -344,5 +347,12 @@ contract MemoryGame is ERC721URIStorage, Ownable, ERC2771Context {
      */
     function _msgData() internal view override(Context, ERC2771Context) returns (bytes calldata) {
         return ERC2771Context._msgData();
+    }
+    
+    /**
+     * @dev Override for compatibility with OpenZeppelin v4.x
+     */
+    function _exists(uint256 tokenId) internal view virtual override returns (bool) {
+        return _ownerOf(tokenId) != address(0);
     }
 } 
