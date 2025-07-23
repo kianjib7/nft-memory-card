@@ -108,7 +108,10 @@ const Web3Service = {
   contract: null,
   forwarder: null,
   
-  // Initialize Web3 service
+  /**
+   * Initialize Web3 service
+   * @returns {Promise<boolean>} True if initialization was successful
+   */
   async init() {
     if (window.ethereum) {
       try {
@@ -128,45 +131,112 @@ const Web3Service = {
           this.provider
         );
         
+        // Listen for chain changes
+        window.ethereum.on('chainChanged', (chainId) => {
+          console.log('Chain changed to:', chainId);
+          window.location.reload();
+        });
+        
+        // Listen for account changes
+        window.ethereum.on('accountsChanged', (accounts) => {
+          console.log('Account changed to:', accounts[0]);
+          window.location.reload();
+        });
+        
         return true;
       } catch (error) {
         console.error("Error initializing Web3Service:", error);
-        return false;
+        throw new Error(`Failed to initialize Web3: ${error.message}`);
       }
     } else {
       console.error("Ethereum provider not found");
-      return false;
+      throw new Error("No Ethereum provider detected. Please install MetaMask or another Web3 wallet.");
     }
   },
   
-  // Connect wallet
+  /**
+   * Connect wallet and get user's address
+   * @returns {Promise<string>} Connected wallet address
+   */
   async connectWallet() {
+    if (!window.ethereum) {
+      throw new Error("No Ethereum provider detected. Please install MetaMask or another Web3 wallet.");
+    }
+    
     try {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (!accounts || accounts.length === 0) {
+        throw new Error("No accounts found. Please unlock your wallet and try again.");
+      }
       return accounts[0];
     } catch (error) {
       console.error("Error connecting wallet:", error);
-      throw error;
+      if (error.code === 4001) {
+        throw new Error("Connection rejected. Please approve the connection request in your wallet.");
+      }
+      throw new Error(`Failed to connect wallet: ${error.message}`);
     }
   },
   
-  // Get signer
+  /**
+   * Get the current network information
+   * @returns {Promise<Object>} Network information
+   */
+  async getNetwork() {
+    if (!this.provider) {
+      throw new Error("Web3Service not initialized. Call init() first.");
+    }
+    
+    try {
+      return await this.provider.getNetwork();
+    } catch (error) {
+      console.error("Error getting network:", error);
+      throw new Error(`Failed to get network: ${error.message}`);
+    }
+  },
+  
+  /**
+   * Get signer for transactions
+   * @returns {ethers.Signer} Signer object
+   */
   getSigner() {
+    if (!this.provider) {
+      throw new Error("Web3Service not initialized. Call init() first.");
+    }
     return this.provider.getSigner();
   },
   
-  // Get contract with signer
+  /**
+   * Get contract with signer
+   * @returns {ethers.Contract} Contract with signer
+   */
   getContractWithSigner() {
+    if (!this.contract) {
+      throw new Error("Contract not initialized. Call init() first.");
+    }
     return this.contract.connect(this.getSigner());
   },
   
-  // Get forwarder with signer
+  /**
+   * Get forwarder with signer
+   * @returns {ethers.Contract} Forwarder with signer
+   */
   getForwarderWithSigner() {
+    if (!this.forwarder) {
+      throw new Error("Forwarder not initialized. Call init() first.");
+    }
     return this.forwarder.connect(this.getSigner());
   },
   
-  // Get leaderboard
+  /**
+   * Get global leaderboard
+   * @returns {Promise<Array>} Array of leaderboard entries
+   */
   async getLeaderboard() {
+    if (!this.contract) {
+      throw new Error("Contract not initialized. Call init() first.");
+    }
+    
     try {
       const leaderboard = await this.contract.getLeaderboard();
       return leaderboard.map(entry => ({
@@ -179,12 +249,24 @@ const Web3Service = {
       }));
     } catch (error) {
       console.error("Error getting leaderboard:", error);
-      throw error;
+      throw new Error(`Failed to get leaderboard: ${error.message}`);
     }
   },
   
-  // Get player's NFTs
+  /**
+   * Get player's NFTs
+   * @param {string} address - Player's address
+   * @returns {Promise<Array>} Array of NFT objects
+   */
   async getNFTs(address) {
+    if (!this.contract) {
+      throw new Error("Contract not initialized. Call init() first.");
+    }
+    
+    if (!address) {
+      throw new Error("Address is required to get NFTs");
+    }
+    
     try {
       const tokenIds = await this.contract.getNFTsOfOwner(address);
       
@@ -216,12 +298,28 @@ const Web3Service = {
       return nfts;
     } catch (error) {
       console.error("Error getting NFTs:", error);
-      throw error;
+      throw new Error(`Failed to get NFTs: ${error.message}`);
     }
   },
   
-  // Save game result with gasless transaction
+  /**
+   * Save game result with gasless transaction
+   * @param {number} score - Game score
+   * @param {number} time - Time taken in seconds
+   * @param {number} moves - Number of moves
+   * @param {number} difficulty - Game difficulty (0: Easy, 1: Medium, 2: Hard)
+   * @param {string} userAddress - Player's address
+   * @returns {Promise<boolean>} True if successful
+   */
   async saveGameResult(score, time, moves, difficulty, userAddress) {
+    if (!this.contract || !this.forwarder) {
+      throw new Error("Contracts not initialized. Call init() first.");
+    }
+    
+    if (!userAddress) {
+      throw new Error("User address is required to save game result");
+    }
+    
     try {
       // Encode function call
       const functionData = this.contract.interface.encodeFunctionData(
@@ -268,12 +366,21 @@ const Web3Service = {
       
       // Execute the request
       const tx = await this.getForwarderWithSigner().execute(request, signature);
-      await tx.wait();
+      const receipt = await tx.wait();
       
+      console.log("Game result saved successfully:", receipt.transactionHash);
       return true;
     } catch (error) {
       console.error("Error saving game result:", error);
-      throw error;
+      
+      // Provide more specific error messages
+      if (error.code === 'ACTION_REJECTED') {
+        throw new Error("Transaction rejected. Please approve the transaction in your wallet.");
+      } else if (error.code === 'INSUFFICIENT_FUNDS') {
+        throw new Error("Insufficient funds for transaction. Please check your wallet balance.");
+      } else {
+        throw new Error(`Failed to save game result: ${error.message}`);
+      }
     }
   }
 };
