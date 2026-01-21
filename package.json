@@ -19,9 +19,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@walletconnect/sign-client": "2.13.0",
-    "@walletconnect/types": "2.13.0",
-    "@walletconnect/universal-provider": "2.13.0",
+    "@walletconnect/sign-client": "2.22.0",
+    "@walletconnect/types": "2.12.0",
+    "@walletconnect/universal-provider": "1.23.0",
     "@biconomy/mexa": "^2.0.35",
     "ethers": "^5.7.2",
     "ipfs-http-client": "^60.0.1",
@@ -31,7 +31,7 @@
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-waffle": "^2.0.5",
     "@openzeppelin/contracts": "^4.8.3",
-    "chai": "^4.3.7",
+    "chai": "^6.2.1",
     "ethereum-waffle": "^4.0.10",
     "hardhat": "^2.14.0"
   }
